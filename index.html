@@ -102,7 +102,7 @@
                     <span class="w-1.5 h-4 bg-orange-500 rounded-full inline-block"></span>
                     সকল পণ্য
                 </h2>
-                <button id="clear-filter-btn" onclick="loadUserProducts(); document.getElementById('grid-title').innerText='সকল পণ্য'; this.classList.add('hidden');" class="text-xs text-orange-600 font-bold hidden">
+                <button id="clear-filter-btn" onclick="displayProducts(products); document.getElementById('grid-title').innerText='সকল পণ্য'; this.classList.add('hidden');" class="text-xs text-orange-600 font-bold hidden">
                     সব পণ্য দেখুন <i class="fas fa-arrows-rotate"></i>
                 </button>
             </div>
@@ -433,23 +433,38 @@
         </div>
     </nav>
 
-    <!-- JavaScript Engine -->
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+    <!-- JavaScript Engine with Firebase Connected -->
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBWkT-C2CEJRTcgZoAVx1Bcxrx0zMCxTtA",
+            authDomain: "my-eshop-app-e65ec.firebaseapp.com",
+            projectId: "my-eshop-app-e65ec",
+            storageBucket: "my-eshop-app-e65ec.firebasestorage.app",
+            messagingSenderId: "92808609246",
+            appId: "1:92808609246:web:4b818a50e85633dac7f14f",
+            measurementId: "G-58EWGN2NHL"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         let products = [];
         let cart = [];
-        let orders = JSON.parse(localStorage.getItem('my_orders')) || [];
+        let orders = [];
 
-        // REAL-TIME AUTO SYNC CONNECTIVITY WITH ADMIN PANEL
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'store_products') {
-                loadUserProducts();
-            }
-            if (e.key === 'my_orders') {
-                orders = JSON.parse(localStorage.getItem('my_orders')) || [];
-                if (document.getElementById('track-input').value.trim() !== '') {
-                    searchOrder();
-                }
-            }
+        // Realtime Data Sync from Firebase
+        db.ref('products').on('value', (snapshot) => {
+            const data = snapshot.val();
+            products = data ? Object.values(data) : [];
+            displayProducts(products);
+        });
+
+        db.ref('orders').on('value', (snapshot) => {
+            const data = snapshot.val();
+            orders = data ? Object.values(data) : [];
         });
 
         function showToast(message, type = 'success') {
@@ -495,11 +510,6 @@
             window.scrollTo(0,0);
         }
 
-        function loadUserProducts() {
-            products = JSON.parse(localStorage.getItem('store_products')) || [];
-            displayProducts(products);
-        }
-
         function displayProducts(items) {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = '';
@@ -535,8 +545,6 @@
             });
         }
 
-        loadUserProducts();
-
         function filterByCategory(cat) {
             switchPage('home');
             const filtered = products.filter(p => p.category === cat);
@@ -564,7 +572,7 @@
         }
 
         function openProductDetail(id) {
-            const p = products.find(item => item.id === id);
+            const p = products.find(item => item.id == id);
             if(!p) return;
             const modalContent = document.getElementById('modal-product-content');
             modalContent.innerHTML = `
@@ -589,9 +597,9 @@
         function closeProductModal() { document.getElementById('product-modal').classList.add('hidden'); }
 
         function addToCart(id) {
-            const p = products.find(item => item.id === id);
+            const p = products.find(item => item.id == id);
             if(!p) return;
-            const exist = cart.find(item => item.id === id);
+            const exist = cart.find(item => item.id == id);
             if(exist) { exist.qty++; } else { cart.push({...p, qty: 1}); }
             updateCartUI();
             showToast('পণ্যটি কার্টে যোগ করা হয়েছে!');
@@ -724,8 +732,7 @@
                 isAdminOrder: false
             };
 
-            orders.push(orderData);
-            localStorage.setItem('my_orders', JSON.stringify(orders));
+            db.ref('orders/' + orderId).set(orderData);
 
             cart = [];
             updateCartUI();
@@ -758,4 +765,4 @@
         }
     </script>
 </body>
-        </html>
+</html>
