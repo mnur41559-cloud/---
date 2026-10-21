@@ -439,6 +439,19 @@
         let cart = [];
         let orders = JSON.parse(localStorage.getItem('my_orders')) || [];
 
+        // REAL-TIME AUTO SYNC CONNECTIVITY WITH ADMIN PANEL
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'store_products') {
+                loadUserProducts();
+            }
+            if (e.key === 'my_orders') {
+                orders = JSON.parse(localStorage.getItem('my_orders')) || [];
+                if (document.getElementById('track-input').value.trim() !== '') {
+                    searchOrder();
+                }
+            }
+        });
+
         function showToast(message, type = 'success') {
             const toast = document.getElementById('custom-toast');
             const msg = document.getElementById('toast-message');
@@ -707,7 +720,8 @@
                 payment: method,
                 trx: trxIdInput || 'N/A (COD)',
                 note: document.getElementById('delivery-note').value || 'নেই',
-                status: 'প্রক্রিয়াধীন (Processing)'
+                status: 'প্রক্রিয়াধীন (Processing)',
+                isAdminOrder: false
             };
 
             orders.push(orderData);
@@ -744,4 +758,4 @@
         }
     </script>
 </body>
-              </html>
+        </html>
